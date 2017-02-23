@@ -1,4 +1,3 @@
 ﻿  genomeAlign.cpp
-c:\users\chris\documents\github\project2\implementation2\implementation2\genomealign.cpp(114): warning C4101: 'min_cost': unreferenced local variable
   Implementation2.vcxproj -> C:\Users\Chris\Documents\GitHub\Project2\Implementation2\Debug\Implementation2.exe
   Implementation2.vcxproj -> C:\Users\Chris\Documents\GitHub\Project2\Implementation2\Debug\Implementation2.pdb (Full PDB)
