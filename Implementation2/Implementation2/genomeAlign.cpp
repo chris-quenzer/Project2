@@ -7,7 +7,7 @@
 
 #include <vector>
 
-#define ALL_FILES 0
+#define ALL_FILES 1
 #define DEBUG 1 //turn this on for !ALL_FILES
 
 enum letter_index 
@@ -111,9 +111,9 @@ int edit_dist(string &str1, string &str2, int m, int n, char **cost_arr_in)
 void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, vector<vector<int>> back, int cost)
 {
 	string str1_new = "", str2_new = "";
-	int i, j, min_cost;
+	int i, j;
 
-	if (m > n)
+	/*if (m > n)
 	{
 		string str1_temp = str1;
 		string str2_temp = str2;
@@ -124,15 +124,13 @@ void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, 
 		str2 = str1_temp;
 		m = n_temp;
 		n = m_temp;
-	}
+	}*/
 
 	i = m; //i = m - 1;
 	j = n; //j = n - 1;
 
 	while (i > 0 && j > 0)
 	{
-		//min_cost = get_min_cost(table[i - 1][j], table[i - 1][j - 1], table[i][j - 1]);
-
 		if (back[i][j] == U) // up
 		{
 			str1_new = "-" + str1_new;
