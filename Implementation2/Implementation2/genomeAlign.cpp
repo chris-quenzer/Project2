@@ -19,10 +19,17 @@ enum letter_index
 	C = 5 
 };
 
+enum back_trace
+{
+	DIA = 1,
+	U = 2,
+	L = 3
+};
+
 using namespace std;
 
 int edit_dist(string &str1, string &str2, int m, int n, char **cost_arr_in);
-void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, int cost);
+void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, vector<vector<int>> back, int cost);
 int det_cost(char comp1, char comp2, char **cost_arr_in);
 void create_cost_arr(char **&cost_arr_in);
 int get_min_cost(int x, int y, int z);
@@ -31,6 +38,7 @@ int edit_dist(string &str1, string &str2, int m, int n, char **cost_arr_in)
 {
 	int output = -1;
 	vector<vector<int>> table;
+	vector<vector<int>> back;
 
 	if (m > n)
 	{
@@ -49,10 +57,12 @@ int edit_dist(string &str1, string &str2, int m, int n, char **cost_arr_in)
 	if (m <= n)
 	{
 		table.resize(m + 1, vector<int>(n + 1));
+		back.resize(m + 1, vector<int>(n + 1));
 	}
 	else
 	{
 		table.resize(n + 1, vector<int>(m + 1));
+		back.resize(n + 1, vector<int>(m + 1));
 	}
 
 	str1 = '-' + str1;
@@ -73,28 +83,32 @@ int edit_dist(string &str1, string &str2, int m, int n, char **cost_arr_in)
 	{
 		for (int j = 1; j < n + 1; j++)
 		{
-			if (str1[i] == str2[j])
-			{
-				table[i][j] = table[i - 1][j - 1];
-				output = table[i][j];
-			}
-			else
-			{
-				table[i][j] = get_min_cost(table[i - 1][j]/* + det_cost(str1[i], '-', cost_arr_in)*/, //Delete
-											table[i][j - 1]/* + det_cost(str2[j], '-', cost_arr_in)*/, //Insert
-											table[i - 1][j - 1] + det_cost(str1[i], str2[j], cost_arr_in)); //Align
-				output = table[i][j];
-			}
+			table[i][j] = get_min_cost(table[i - 1][j] + det_cost(str1[i], '-', cost_arr_in), //Delete
+										table[i][j - 1] + det_cost(str2[j], '-', cost_arr_in), //Insert
+										table[i - 1][j - 1] + det_cost(str1[i], str2[j], cost_arr_in)); //Align
+			output = table[i][j];
 
+			if (output == table[i - 1][j] + det_cost(str1[i], '-', cost_arr_in))
+			{
+				back[i][j] = U;
+			}
+			else if (output == table[i][j - 1] + det_cost(str2[j], '-', cost_arr_in))
+			{
+				back[i][j] = L;
+			}
+			else if (output == table[i - 1][j - 1] + det_cost(str1[i], str2[j], cost_arr_in))
+			{
+				back[i][j] = DIA;
+			}
 		}
 	}
 
-	align(str1, str2, m, n, table, output);
+	align(str1, str2, m, n, table, back, output);
 	
 	return output;
 }
 
-void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, int cost)
+void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, vector<vector<int>> back, int cost)
 {
 	string str1_new = "", str2_new = "";
 	int i, j, min_cost;
@@ -112,39 +126,54 @@ void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, 
 		n = m_temp;
 	}
 
-	i = 1;
-	j = 1;
+	i = m; //i = m - 1;
+	j = n; //j = n - 1;
 
-	while (i < m && j < n)
+	while (i > 0 && j > 0)
 	{
-		min_cost = get_min_cost(table[i + 1][j], table[i + 1][j + 1], table[i][j + 1]);
+		//min_cost = get_min_cost(table[i - 1][j], table[i - 1][j - 1], table[i][j - 1]);
 
-		if (min_cost == table[i + 1][j]) //Delete
+		if (back[i][j] == U) // up
 		{
-			str1_new = str1_new + "-";
-			str2_new = str2_new + str2[j];
-			i++;
+			str1_new = "-" + str1_new;
+			str2_new = str2[j] + str2_new;
+
+			if (DEBUG) //##########################################
+			{
+				back[i][j] = back[i][j] * 100; // keep track of path thru table
+			}//####################################################
+
+			i--;
 		}
 
-		else if (min_cost == table[i + 1][j + 1]) //Align
+		else if (back[i][j] == DIA) // diag
 		{
-			str1_new = str1_new + str1[i];
-			str2_new = str2_new + str2[j];
-			i++;
-			j++;
+			str1_new = str1[i] + str1_new;
+			str2_new = str2[j] + str2_new;
+
+			if (DEBUG) //##########################################
+			{
+				back[i][j] = back[i][j] * 100; // keep track of path thru table
+			}//####################################################
+
+			i--;
+			j--;
 		}
 
-		else if (min_cost == table[i][j + 1]) //Insert
+		else if (back[i][j] == L) // left
 		{
-			str1_new = str1_new + str1[i];
-			str2_new = str2_new + "-";
-			j++;
-		}
+			str1_new = str1[i] + str1_new;
+			str2_new = "-" + str2_new;
 
-		//i--;
-		//j--;
+			if (DEBUG) //##########################################
+			{
+				back[i][j] = back[i][j] * 100; // keep track of path thru table
+			}//####################################################
+
+			j--;
+		}
 	}
-	/*if (j < n)
+	/*if (j < 1)
 	{
 		str1_new = str1.substr(0, j) + str1_new;
 
@@ -156,7 +185,7 @@ void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, 
 		str2_new = str2_new + str2_new;
 	}
 	
-	if (i < m)
+	if (i < 1)
 	{
 		for (int k = 0; k < i; k++)
 		{
@@ -180,9 +209,14 @@ void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, 
 		outfile << "Str 1 Len: " << str1.length() << endl;
 		outfile << "Str 2 Len: " << str2.length() << endl << endl;
 
-		outfile << "Output: (Alignment is still wrong)" << endl;
+		outfile << "Output:" << endl;
 		outfile << str1_new << "," << endl << str2_new << ":" << cost << endl << endl;
 
+		outfile << "Expected Output:" << endl;
+		outfile << "C--GCAATTCTGAAGCGCTGGGGAAGAC--GGG-T,\nTATCCCATCGA-ACGC-CT----AT-TCTAGG-AT:24" << endl << endl;
+
+		// TABLE --------------------------
+		outfile << "--- COST TABLE ---" << endl;
 		for (int i = 0; i < m + 1; i++)
 		{
 			if (i == 0)
@@ -211,9 +245,47 @@ void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, 
 				}
 			}
 			outfile << "]";
-			outfile << endl;
+			outfile << endl << endl;
 		}
 		outfile << endl;
+		// END TABLE --------------------------
+
+		// BACKTRACE --------------------------
+		outfile << "--- BACKTRACE TABLE ---" << endl;
+		for (int i = 0; i < m + 1; i++)
+		{
+			if (i == 0)
+			{
+				outfile << "\t ";
+				for (int j = 0; j < n + 1; j++)
+				{
+					outfile << setw(5) << j + 1;
+				}
+				outfile << endl;
+				outfile << "\t ";
+				for (int j = 0; j < n + 1; j++)
+				{
+					outfile << setw(5) << "_____";
+				}
+				outfile << endl;
+			}
+
+			outfile << setw(4) << i + 1 << " [";
+			for (int j = 0; j < n + 1; j++)
+			{
+				outfile << setw(4) << back[i][j];
+				if (j < (n))
+				{
+					outfile << ",";
+				}
+			}
+			outfile << "]";
+			outfile << endl << endl;
+		}
+		outfile << endl;
+		// END BACKTRACE --------------------------
+
+
 		outfile.close();
 
 		//ofstream outfile;
@@ -380,8 +452,8 @@ int main()
 	}
 	else
 	{
-		string str1 = "CCACTGACATAAGCCTCTGCGTTC";
-		string str2 = "TCATGACATGTGCCGCTCACCGTGACTATAGACTCTCAGCAATGGTTAAAGAATCAGCCCGCCAATAGGGGCGGCAAATAATACCGCTGC";
+		string str1 = "CGCAATTCTGAAGCGCTGGGGAAGACGGGT";
+		string str2 = "TATCCCATCGAACGCCTATTCTAGGAT";
 
 		int cost = 0;
 
