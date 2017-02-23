@@ -7,7 +7,7 @@
 
 #include <vector>
 
-#define ALL_FILES 1
+#define ALL_FILES 0
 #define DEBUG 1 //turn this on for !ALL_FILES
 
 enum letter_index 
@@ -29,7 +29,7 @@ enum back_trace
 using namespace std;
 
 int edit_dist(string &str1, string &str2, int m, int n, char **cost_arr_in);
-void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, vector<vector<int>> back, int cost);
+void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, bool flipped, vector<vector<int>> back, int cost, char **cost_arr_in);
 int det_cost(char comp1, char comp2, char **cost_arr_in);
 void create_cost_arr(char **&cost_arr_in);
 int get_min_cost(int x, int y, int z);
@@ -39,6 +39,7 @@ int edit_dist(string &str1, string &str2, int m, int n, char **cost_arr_in)
 	int output = -1;
 	vector<vector<int>> table;
 	vector<vector<int>> back;
+	bool flipped = false;
 
 	if (m > n)
 	{
@@ -51,6 +52,8 @@ int edit_dist(string &str1, string &str2, int m, int n, char **cost_arr_in)
 		str2 = str1_temp;
 		m = n_temp;
 		n = m_temp;
+
+		flipped = true;
 	}
 
 	// Create table to hold subproblems
@@ -103,74 +106,113 @@ int edit_dist(string &str1, string &str2, int m, int n, char **cost_arr_in)
 		}
 	}
 
-	align(str1, str2, m, n, table, back, output);
+	align(str1, str2, m, n, table, flipped, back, output, cost_arr_in);
 	
 	return output;
 }
 
-void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, vector<vector<int>> back, int cost)
+void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, bool flipped, vector<vector<int>> back, int cost, char **cost_arr_in)
 {
 	string str1_new = "", str2_new = "";
 	int i, j;
 
-	/*if (m > n)
+	/*if (flipped)
 	{
-		string str1_temp = str1;
-		string str2_temp = str2;
-		int m_temp = m;
-		int n_temp = n;
-
-		str1 = str2_temp;
-		str2 = str1_temp;
-		m = n_temp;
-		n = m_temp;
-	}*/
-
-	i = m; //i = m - 1;
-	j = n; //j = n - 1;
-
-	while (i > 0 && j > 0)
-	{
-		if (back[i][j] == U) // up
+		i = m;
+		j = n;
+		
+		while (i > 0 && j > 0)
 		{
-			str1_new = "-" + str1_new;
-			str2_new = str2[j] + str2_new;
-
-			if (DEBUG) //##########################################
+			if (back[i][j] == U) // up
 			{
-				back[i][j] = back[i][j] * 100; // keep track of path thru table
-			}//####################################################
+				str1_new = "-" + str2_new;
+				str2_new = str2[j] + str1_new;
 
-			i--;
-		}
+				if (DEBUG) //##########################################
+				{
+					back[i][j] = back[i][j] * 100; // keep track of path thru table
+				}//####################################################
 
-		else if (back[i][j] == DIA) // diag
-		{
-			str1_new = str1[i] + str1_new;
-			str2_new = str2[j] + str2_new;
+				i--;
+			}
 
-			if (DEBUG) //##########################################
+			else if (back[i][j] == DIA) // diag
 			{
-				back[i][j] = back[i][j] * 100; // keep track of path thru table
-			}//####################################################
+				str1_new = str1[i] + str2_new;
+				str2_new = str2[j] + str1_new;
 
-			i--;
-			j--;
-		}
+				if (DEBUG) //##########################################
+				{
+					back[i][j] = back[i][j] * 100; // keep track of path thru table
+				}//####################################################
 
-		else if (back[i][j] == L) // left
-		{
-			str1_new = str1[i] + str1_new;
-			str2_new = "-" + str2_new;
+				i--;
+				j--;
+			}
 
-			if (DEBUG) //##########################################
+			else if (back[i][j] == L) // left
 			{
-				back[i][j] = back[i][j] * 100; // keep track of path thru table
-			}//####################################################
+				str1_new = str1[i] + str2_new;
+				str2_new = "-" + str1_new;
 
-			j--;
+				if (DEBUG) //##########################################
+				{
+					back[i][j] = back[i][j] * 100; // keep track of path thru table
+				}//####################################################
+
+				j--;
+			}
 		}
 	}
+	else
+	{*/
+		i = m;
+		j = n;
+		
+		while (i > 0 && j > 0)
+		{
+			if (back[i][j] == U) // up
+			{
+				str1_new = "-" + str1_new;
+				str2_new = str2[j-1] + str2_new;
+
+				if (DEBUG) //##########################################
+				{
+					back[i][j] = back[i][j] * 100; // keep track of path thru table
+				}//####################################################
+
+				i--;
+			}
+
+			else if (back[i][j] == DIA) // diag
+			{
+				str1_new = str1[i - 1] + str1_new;
+				str2_new = str2[j - 1] + str2_new;
+
+				if (DEBUG) //##########################################
+				{
+					back[i][j] = back[i][j] * 100; // keep track of path thru table
+				}//####################################################
+
+				i--;
+				j--;
+			}
+
+			else if (back[i][j] == L) // left
+			{
+				str1_new = str1[i - 1] + str1_new;
+				str2_new = "-" + str2_new;
+
+				if (DEBUG) //##########################################
+				{
+					back[i][j] = back[i][j] * 100; // keep track of path thru table
+				}//####################################################
+
+				j--;
+			}
+		}
+	//}
+
 	/*if (j < 1)
 	{
 		str1_new = str1.substr(0, j) + str1_new;
@@ -208,6 +250,17 @@ void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, 
 		outfile << "Str 2 Len: " << str2.length() << endl << endl;
 
 		outfile << "Output:" << endl;
+		outfile << "Calculated cost: " << cost  << endl;
+
+		int act_cost = 0;
+		for (int i = 0; i < str1_new.length(); i++)
+		{
+			
+			act_cost += det_cost(str1_new[i], str2_new[i], cost_arr_in);
+			
+		}
+		outfile << "Actual cost: " << act_cost << endl;
+
 		outfile << str1_new << "," << endl << str2_new << ":" << cost << endl << endl;
 
 		outfile << "Expected Output:" << endl;
@@ -295,18 +348,9 @@ void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, 
 		cout << str2_new << ":" << cost << endl;
 	}//###################################################################################################
 
-	if (m > n)
-	{
-		string str1_temp = str1;
-		string str2_temp = str2;
-		str1 = str2_temp;
-		str2 = str1_temp;
-	}
-	else
-	{
-		str1 = str1_new;
-		str2 = str2_new;
-	}
+	str1 = str1_new;
+	str2 = str2_new;
+	
 }
 
 int det_cost(char comp1, char comp2, char **cost_arr_in)
