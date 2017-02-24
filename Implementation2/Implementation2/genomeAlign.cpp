@@ -8,11 +8,11 @@
 #include <vector>
 #include <ctime>
 
-#define ALL_INPUTS 1
-#define RAND_INPUT_FILE 1
-#define DEBUG 0 //turn this on for !ALL_FILES
-#define TABLE_FILE 0
-#define TIME_FILES 1
+#define ALL_INPUTS 1 //run complete input file
+#define RAND_INPUT_FILE 0 //create random seq size input file
+#define DEBUG 0 //turn this on for printed debug statements
+#define TABLE_FILE 0 //print out cost and backtrace tables per sequence
+#define TIME_FILES 0 //copy algorithm run times to file
 
 enum letter_index 
 { 
@@ -499,7 +499,7 @@ int main()
 
 		if (RAND_INPUT_FILE)
 		{
-			create_rand_inpt_file(5000, 10);
+			create_rand_inpt_file(50, 100);
 		}
 		if (TIME_FILES)
 		{
