@@ -5,11 +5,14 @@
 #include <cmath>
 #include <algorithm>
 #include <deque>
-
 #include <vector>
+#include <ctime>
 
-#define ALL_FILES 1
-#define DEBUG 1 //turn this on for !ALL_FILES
+#define ALL_INPUTS 1
+#define RAND_INPUT_FILE 1
+#define DEBUG 0 //turn this on for !ALL_FILES
+#define TABLE_FILE 0
+#define TIME_FILES 1
 
 enum letter_index 
 { 
@@ -35,6 +38,10 @@ int det_cost(char comp1, char comp2, char **cost_arr_in);
 void create_cost_arr(char **&cost_arr_in);
 int get_min_cost(int x, int y, int z);
 
+void create_rand_inpt_file(int seq_len, int seq_num);
+float Rand_f(float low, float high);
+int Rand_i(int ilow, int ihigh);
+
 int edit_dist(string &str1, string &str2, int m, int n, char **cost_arr_in)
 {
 	int output = -1;
@@ -57,6 +64,17 @@ int edit_dist(string &str1, string &str2, int m, int n, char **cost_arr_in)
 	str1 = '-' + str1;
 	str2 = '-' + str2;
 
+	//timing
+	ofstream outfile;
+	int start_s;
+	int stop_s;
+	if (TIME_FILES)
+	{
+		outfile.open("timing.txt", ios::out | ios::app);
+		outfile << endl << "--- Edit Distance ---" << endl;
+		start_s = clock();
+	}
+	
 	//Base cases
 	table[0][0] = 0;
 	for (int i = 1; i < m + 1; i++)
@@ -81,17 +99,24 @@ int edit_dist(string &str1, string &str2, int m, int n, char **cost_arr_in)
 			{
 				back[i][j] = DIAG;
 			}
-			else if (output == table[i][j - 1] + det_cost(str2[j], '-', cost_arr_in)) //insert --- LEFT
-			{
-				back[i][j] = L;
-			}
 			else if (output == table[i - 1][j] + det_cost(str1[i], '-', cost_arr_in)) //delete --- DOWN
 			{
 				back[i][j] = D;
 			}
+			else if (output == table[i][j - 1] + det_cost(str2[j], '-', cost_arr_in)) //insert --- LEFT
+			{
+				back[i][j] = L;
+			}
 		}
 	}
 
+	if (TIME_FILES)
+	{
+		stop_s = clock();
+		outfile << "time: " << (stop_s - start_s) / double(CLOCKS_PER_SEC) * 1000 << endl;
+		outfile.close();
+	}// end timing
+	
 	align(str1, str2, m, n, table, back, output, cost_arr_in);
 	
 	return output;
@@ -101,42 +126,32 @@ void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, 
 {
 	string str1_new = "", str2_new = "";
 	int i, j;
-	deque<int> path;
 
+	string str1_temp = str1;
+	string str2_temp = str2;
+	str1 = str2_temp;
+	str2 = str1_temp;
 
-	/*if (m > n)
-	{
-		string str1_temp = str1;
-		string str2_temp = str2;
-		int m_temp = m;
-		int n_temp = n;
-
-		str1 = str2_temp;
-		str2 = str1_temp;
-		m = n_temp;
-		n = m_temp;
-	}*/
-	/*for (int i = 1; i < m + 1; i++)
-	{
-		for (int j = 1; j < n + 1; j++)
-		{
-			cout << back[i][j] << ",";
-		}
-		cout << endl;
-	}
-	cout << endl;*/
-	
 	i = m + 1;
 	j = n + 1;
+
+	//timing
+	ofstream outfile_t;
+	int start_s;
+	int stop_s;
+	if (TIME_FILES)
+	{
+		outfile_t.open("timing.txt", ios::out | ios::app);
+		outfile_t << endl << "--- Align ---" << endl;
+		start_s = clock();
+	}
 		
 	while (i > 1 && j > 1)
 	{
 		if (back[i - 1][j - 1] == DIAG) // diag
 		{
-			path.push_front(back[i - 1][j - 1]);
-
-			//str1_new = str1[i - 1] + str1_new;
-			//str2_new = str2[j - 1] + str2_new;
+			str1_new = str1[j - 1] + str1_new;
+			str2_new = str2[i - 1] + str2_new;
 
 			if (DEBUG) //##########################################
 			{
@@ -149,10 +164,8 @@ void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, 
 		}
 		else if (back[i - 1][j - 1] == D) // down
 		{
-			//str1_new = "-" + str1_new;
-			//str2_new = str2[j - 1] + str2_new;
-
-			path.push_front(back[i - 1][j - 1]);
+			str1_new = "-" + str1_new;
+			str2_new = str2[i - 1] + str2_new;
 
 			if (DEBUG) //##########################################
 			{
@@ -163,10 +176,8 @@ void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, 
 		}
 		else if (back[i - 1][j - 1] == L) // left
 		{
-			//str1_new = str1[i - 1] + str1_new;
-			//str2_new = "-" + str2_new;
-
-			path.push_front(back[i - 1][j - 1]);
+			str1_new = str1[j - 1] + str1_new;
+			str2_new = "-" + str2_new;
 
 			if (DEBUG) //##########################################
 			{
@@ -179,68 +190,34 @@ void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, 
 
 	if (j > 1)
 	{
-		while (j > 1)
+		str1_new = str1.substr(0, j) + str1_new;
+		string str_to_add = "";
+		for (int k = 0; k < j; k++)
 		{
-			//str1_new = str1.substr[0, j] + str1_new;
-			/*string str_to_add = "";
-			for (int k = 0; k < j; k++)
-			{
-				str_to_add += "-";
-			}
-			str2_new = str_to_add + str2_new;
-			*/
-
-			path.push_front(back[i - 1][j - 1]);
-			j--;
+			str_to_add += "-";
 		}
+		str2_new = str_to_add + str2_new;
 	}
 
 	if (i > 1)
 	{
-		while (i > 1)
+		str2_new = str2.substr(0, i) + str2_new;
+		string str_to_add = "";
+		for (int k = 0; k < i; k++)
 		{
-			//str2_new = str2.substr[0, i] + str2_new;
-			/*string str_to_add = "";
-			for (int k = 0; k < i; k++)
-			{
-				str_to_add += "-";
-			}
-			str1_new = str_to_add + str1_new;
-			*/
-
-			path.push_front(back[i - 1][j - 1]);
-			i--;
+			str_to_add += "-";
 		}
+		str1_new = str_to_add + str1_new;
 	}
 
-	i = 1;
-	j = 1;
-	str1_new.clear();
-	str2_new.clear();
-	for (int k = 0; k < path.size(); k++) // <-------- Crashing here. I think path.size() is either too small or too large sometimes.
+	if (TIME_FILES)
 	{
-		if (path[k] == L)
-		{
-			str1_new += '-';
-			str2_new += str1[j];
-			j++;
-		}
-		else if (path[k] == D)
-		{
-			str2_new += '-';
-			str1_new += str1[i];
-			i++;
-		}
-		else if (path[k] == DIAG)
-		{
-			str1_new += str1[i];
-			str2_new += str2[j];
-			i++;
-			j++;
-		}
-	}
+		stop_s = clock();
+		outfile_t << "time: " << (stop_s - start_s) / double(CLOCKS_PER_SEC) * 1000 << endl;
+		outfile_t.close();
+	}// end timing
 	
-	if (DEBUG)//#####################################################################################
+	if (DEBUG && TABLE_FILE)//#####################################################################################
 	{
 		ofstream outfile;
 		outfile.open("Chris_Table.txt");
@@ -264,14 +241,6 @@ void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, 
 		}
 		outfile << "Actual cost: " << act_cost << endl;
 		outfile << str1_new << "," << endl << str2_new << ":" << cost << endl << endl;
-
-		outfile << "Optimum Path:" << endl;
-		for (int k = 0; k < path.size(); k++)
-		{
-			outfile << path[k] << ",";
-		}
-		outfile << endl;
-		outfile << "Path length: " << path.size() << endl << endl;
 
 		outfile << "Expected Output:" << endl;
 		outfile << "C--GCAATTCTGAAGCGCTGGGGAAGAC--GGG-T,\nTATCCCATCGA-ACGC-CT----AT-TCTAGG-AT:24" << endl << endl;
@@ -422,7 +391,7 @@ void create_cost_arr(char **&cost_arr_in)
 	{
 		while (getline(file, line))
 		{
-			if (DEBUG && !ALL_FILES)//#########################
+			if (DEBUG && !ALL_INPUTS)//#########################
 			{
 				cout << line << endl;
 			}//##################################
@@ -457,10 +426,64 @@ int get_min_cost(int x, int y, int z)
 	return min(min(x, y), z);
 }
 
+void create_rand_inpt_file(int seq_len, int seq_num)
+{
+	ofstream outfile;
+	outfile.open("imp2input.txt");
+
+	for (int i = 0; i < seq_num; i++)
+	{
+		for (int j = 0; j < seq_len * 2; j++)
+		{
+			switch (Rand_i(1, 4))
+			{
+				case 1:
+					outfile << "A";
+					break;
+				case 2:
+					outfile << "G";
+					break;
+				case 3:
+					outfile << "T";
+					break;
+				case 4:
+					outfile << "C";
+					break;
+
+			};
+			if (j == seq_len)
+			{
+				outfile << ",";
+			}
+		}
+		outfile << endl;
+	}
+	outfile.close();
+}
+
+float Rand_f(float low, float high)
+{
+	long random();		// returns integer 0 - TOP
+	float r;		// random number
+
+	r = (float)rand();
+
+	return(low + r * (high - low) / (float)RAND_MAX);
+}
+
+
+int Rand_i(int ilow, int ihigh)
+{
+	float low = (float)ilow;
+	float high = ceil((float)ihigh);
+
+	return (int)Rand_f(low, high);
+}
+
 int main()
 {
 	
-	if (ALL_FILES)
+	if (ALL_INPUTS)
 	{
 		string line;
 		ifstream file;
@@ -472,6 +495,17 @@ int main()
 		for (int i = 0; i < 7; i++)
 		{
 			cost_arr[i] = new char[6];
+		}
+
+		if (RAND_INPUT_FILE)
+		{
+			create_rand_inpt_file(5000, 10);
+		}
+		if (TIME_FILES)
+		{
+			outfile.open("timing.txt", ios::out | ios::app);
+			outfile << "-----------------------------------------------------------" << endl;
+			outfile.close();
 		}
 
 		file.open("imp2input.txt");
