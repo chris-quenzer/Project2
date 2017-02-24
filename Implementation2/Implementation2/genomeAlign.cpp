@@ -22,14 +22,14 @@ enum letter_index
 enum back_trace
 {
 	DIA = 1,
-	U = 2,
+	D = 2,
 	L = 3
 };
 
 using namespace std;
 
 int edit_dist(string &str1, string &str2, int m, int n, char **cost_arr_in);
-void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, bool flipped, vector<vector<int>> back, int cost, char **cost_arr_in);
+void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, vector<vector<int>> back, int cost, char **cost_arr_in);
 int det_cost(char comp1, char comp2, char **cost_arr_in);
 void create_cost_arr(char **&cost_arr_in);
 int get_min_cost(int x, int y, int z);
@@ -39,22 +39,7 @@ int edit_dist(string &str1, string &str2, int m, int n, char **cost_arr_in)
 	int output = -1;
 	vector<vector<int>> table;
 	vector<vector<int>> back;
-	bool flipped = false;
-
-	if (m > n)
-	{
-		string str1_temp = str1;
-		string str2_temp = str2;
-		int m_temp = m;
-		int n_temp = n;
-
-		str1 = str2_temp;
-		str2 = str1_temp;
-		m = n_temp;
-		n = m_temp;
-
-		flipped = true;
-	}
+	int str_diff = m - n;
 
 	// Create table to hold subproblems
 	if (m <= n)
@@ -64,8 +49,8 @@ int edit_dist(string &str1, string &str2, int m, int n, char **cost_arr_in)
 	}
 	else
 	{
-		table.resize(n + 1, vector<int>(m + 1));
-		back.resize(n + 1, vector<int>(m + 1));
+		table.resize(m + 1, vector<int>(n + str_diff + 1));
+		back.resize(m + 1, vector<int>(n + str_diff + 1));
 	}
 
 	str1 = '-' + str1;
@@ -91,129 +76,101 @@ int edit_dist(string &str1, string &str2, int m, int n, char **cost_arr_in)
 										table[i - 1][j - 1] + det_cost(str1[i], str2[j], cost_arr_in)); //Align
 			output = table[i][j];
 
-			if (output == table[i - 1][j] + det_cost(str1[i], '-', cost_arr_in))
-			{
-				back[i][j] = U;
-			}
-			else if (output == table[i][j - 1] + det_cost(str2[j], '-', cost_arr_in))
+			
+			if (output == table[i][j - 1] + det_cost(str2[j], '-', cost_arr_in)) //insert
 			{
 				back[i][j] = L;
 			}
-			else if (output == table[i - 1][j - 1] + det_cost(str1[i], str2[j], cost_arr_in))
+			else if (output == table[i - 1][j] + det_cost(str1[i], '-', cost_arr_in)) //delete
+			{
+				back[i][j] = D;
+			}
+			else if (output == table[i - 1][j - 1] + det_cost(str1[i], str2[j], cost_arr_in)) //align
 			{
 				back[i][j] = DIA;
 			}
 		}
 	}
 
-	align(str1, str2, m, n, table, flipped, back, output, cost_arr_in);
+	align(str1, str2, m, n, table, back, output, cost_arr_in);
 	
 	return output;
 }
 
-void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, bool flipped, vector<vector<int>> back, int cost, char **cost_arr_in)
+void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, vector<vector<int>> back, int cost, char **cost_arr_in)
 {
 	string str1_new = "", str2_new = "";
 	int i, j;
 
-	/*if (flipped)
+	/*if (m > n)
 	{
-		i = m;
-		j = n;
+		string str1_temp = str1;
+		string str2_temp = str2;
+		int m_temp = m;
+		int n_temp = n;
+
+		str1 = str2_temp;
+		str2 = str1_temp;
+		m = n_temp;
+		n = m_temp;
+	}*/
+
+	i = 1;
+	j = 1;
 		
-		while (i > 0 && j > 0)
+	while (i < m + 1 && j < n + 1)
+	{
+		if (back[i][j] == D) // down
 		{
-			if (back[i][j] == U) // up
+			//str1_new = "-" + str1_new;
+			//str2_new = str2[j-1] + str2_new;
+
+			str1_new = str1_new + "-";
+			str2_new = str2_new + str2[j + 1];
+
+			if (DEBUG) //##########################################
 			{
-				str1_new = "-" + str2_new;
-				str2_new = str2[j] + str1_new;
+				back[i][j] = back[i][j] * 100; // keep track of path thru table
+			}//####################################################
 
-				if (DEBUG) //##########################################
-				{
-					back[i][j] = back[i][j] * 100; // keep track of path thru table
-				}//####################################################
+			i++;
+		}
 
-				i--;
-			}
+		else if (back[i][j] == DIA) // diag
+		{
+			//str1_new = str1[i - 1] + str1_new;
+			//str2_new = str2[j - 1] + str2_new;
 
-			else if (back[i][j] == DIA) // diag
+			str1_new = str1_new + str1[i + 1];
+			str2_new = str2_new + str2[j + 1];
+
+			if (DEBUG) //##########################################
 			{
-				str1_new = str1[i] + str2_new;
-				str2_new = str2[j] + str1_new;
+				back[i][j] = back[i][j] * 100; // keep track of path thru table
+			}//####################################################
 
-				if (DEBUG) //##########################################
-				{
-					back[i][j] = back[i][j] * 100; // keep track of path thru table
-				}//####################################################
+			i++;
+			j++;
+		}
 
-				i--;
-				j--;
-			}
+		else if (back[i][j] == L) // left
+		{
+			//str1_new = str1[i - 1] + str1_new;
+			//str2_new = "-" + str2_new;
 
-			else if (back[i][j] == L) // left
+			str1_new = str1_new + str1[i + 1];
+			str2_new = str2_new + "-";
+
+			if (DEBUG) //##########################################
 			{
-				str1_new = str1[i] + str2_new;
-				str2_new = "-" + str1_new;
+				back[i][j] = back[i][j] * 100; // keep track of path thru table
+			}//####################################################
 
-				if (DEBUG) //##########################################
-				{
-					back[i][j] = back[i][j] * 100; // keep track of path thru table
-				}//####################################################
-
-				j--;
-			}
+			j++;
 		}
 	}
-	else
-	{*/
-		i = m;
-		j = n;
-		
-		while (i > 0 && j > 0)
-		{
-			if (back[i][j] == U) // up
-			{
-				str1_new = "-" + str1_new;
-				str2_new = str2[j-1] + str2_new;
 
-				if (DEBUG) //##########################################
-				{
-					back[i][j] = back[i][j] * 100; // keep track of path thru table
-				}//####################################################
-
-				i--;
-			}
-
-			else if (back[i][j] == DIA) // diag
-			{
-				str1_new = str1[i - 1] + str1_new;
-				str2_new = str2[j - 1] + str2_new;
-
-				if (DEBUG) //##########################################
-				{
-					back[i][j] = back[i][j] * 100; // keep track of path thru table
-				}//####################################################
-
-				i--;
-				j--;
-			}
-
-			else if (back[i][j] == L) // left
-			{
-				str1_new = str1[i - 1] + str1_new;
-				str2_new = "-" + str2_new;
-
-				if (DEBUG) //##########################################
-				{
-					back[i][j] = back[i][j] * 100; // keep track of path thru table
-				}//####################################################
-
-				j--;
-			}
-		}
-	//}
-
-	/*if (j < 1)
+	if (j > 1)
 	{
 		str1_new = str1.substr(0, j) + str1_new;
 
@@ -222,20 +179,20 @@ void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, 
 			str2_new = "-" + str2_new;
 		}
 
-		str2_new = str2_new + str2_new;
+		//str2_new = str2_new + str2_new;
 	}
 	
-	if (i < 1)
+	if (i > 1)
 	{
 		for (int k = 0; k < i; k++)
 		{
 			str1_new = "-" + str1_new;
 		}
 
-		str1_new = str1_new + str1_new;
+		//str1_new = str1_new + str1_new;
 
 		str2_new = str2.substr(0, i) + str2_new;
-	}*/
+	}
 	
 	if (DEBUG)//#####################################################################################
 	{
@@ -494,8 +451,8 @@ int main()
 	}
 	else
 	{
-		string str1 = "CGCAATTCTGAAGCGCTGGGGAAGACGGGT";
-		string str2 = "TATCCCATCGAACGCCTATTCTAGGAT";
+		string str1 = "ACAGCAGTCTGCATCCTAAGTCGGCCTCAGATAGAGGGTCACTCTAGGCAGCAAGTATTGACTCCCGGTCGCGGCTTATTACCGAATG";
+		string str2 = "GTTGGAGACATCTCTCAAGATGTAGGATAGGCGATGGTATCCACTTACGAGTCGCTTGAAGTTCACAGAATAG";
 
 		int cost = 0;
 
