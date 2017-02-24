@@ -4,10 +4,11 @@
 #include <string>
 #include <cmath>
 #include <algorithm>
+#include <deque>
 
 #include <vector>
 
-#define ALL_FILES 0
+#define ALL_FILES 1
 #define DEBUG 1 //turn this on for !ALL_FILES
 
 enum letter_index 
@@ -21,9 +22,9 @@ enum letter_index
 
 enum back_trace
 {
-	DIA = 1,
+	L = 1,
 	D = 2,
-	L = 3
+	DIAG = 3
 };
 
 using namespace std;
@@ -71,23 +72,22 @@ int edit_dist(string &str1, string &str2, int m, int n, char **cost_arr_in)
 	{
 		for (int j = 1; j < n + 1; j++)
 		{
-			table[i][j] = get_min_cost(table[i - 1][j] + det_cost(str1[i], '-', cost_arr_in), //Delete
-										table[i][j - 1] + det_cost(str2[j], '-', cost_arr_in), //Insert
-										table[i - 1][j - 1] + det_cost(str1[i], str2[j], cost_arr_in)); //Align
+			table[i][j] = get_min_cost(table[i - 1][j] + det_cost(str1[i], '-', cost_arr_in), //Delete --- DOWN
+										table[i][j - 1] + det_cost(str2[j], '-', cost_arr_in), //Insert --- LEFT
+										table[i - 1][j - 1] + det_cost(str1[i], str2[j], cost_arr_in)); //Align --- DIAG
 			output = table[i][j];
 
-			
-			if (output == table[i][j - 1] + det_cost(str2[j], '-', cost_arr_in)) //insert
+			if (output == table[i - 1][j - 1] + det_cost(str1[i], str2[j], cost_arr_in)) //align --- DIAG
+			{
+				back[i][j] = DIAG;
+			}
+			else if (output == table[i][j - 1] + det_cost(str2[j], '-', cost_arr_in)) //insert --- LEFT
 			{
 				back[i][j] = L;
 			}
-			else if (output == table[i - 1][j] + det_cost(str1[i], '-', cost_arr_in)) //delete
+			else if (output == table[i - 1][j] + det_cost(str1[i], '-', cost_arr_in)) //delete --- DOWN
 			{
 				back[i][j] = D;
-			}
-			else if (output == table[i - 1][j - 1] + det_cost(str1[i], str2[j], cost_arr_in)) //align
-			{
-				back[i][j] = DIA;
 			}
 		}
 	}
@@ -101,6 +101,8 @@ void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, 
 {
 	string str1_new = "", str2_new = "";
 	int i, j;
+	deque<int> path;
+
 
 	/*if (m > n)
 	{
@@ -114,84 +116,128 @@ void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, 
 		m = n_temp;
 		n = m_temp;
 	}*/
-
-	i = 1;
-	j = 1;
-		
-	while (i < m + 1 && j < n + 1)
+	/*for (int i = 1; i < m + 1; i++)
 	{
-		if (back[i][j] == D) // down
+		for (int j = 1; j < n + 1; j++)
 		{
-			//str1_new = "-" + str1_new;
-			//str2_new = str2[j-1] + str2_new;
-
-			str1_new = str1_new + "-";
-			str2_new = str2_new + str2[j + 1];
-
-			if (DEBUG) //##########################################
-			{
-				back[i][j] = back[i][j] * 100; // keep track of path thru table
-			}//####################################################
-
-			i++;
+			cout << back[i][j] << ",";
 		}
-
-		else if (back[i][j] == DIA) // diag
+		cout << endl;
+	}
+	cout << endl;*/
+	
+	i = m + 1;
+	j = n + 1;
+		
+	while (i > 1 && j > 1)
+	{
+		if (back[i - 1][j - 1] == DIAG) // diag
 		{
+			path.push_front(back[i - 1][j - 1]);
+
 			//str1_new = str1[i - 1] + str1_new;
 			//str2_new = str2[j - 1] + str2_new;
 
-			str1_new = str1_new + str1[i + 1];
-			str2_new = str2_new + str2[j + 1];
+			if (DEBUG) //##########################################
+			{
+				back[i - 1][j - 1] = back[i - 1][j - 1] * 100; // keep track of path thru table
+			}//####################################################
+
+			i--;
+			j--;
+			
+		}
+		else if (back[i - 1][j - 1] == D) // down
+		{
+			//str1_new = "-" + str1_new;
+			//str2_new = str2[j - 1] + str2_new;
+
+			path.push_front(back[i - 1][j - 1]);
 
 			if (DEBUG) //##########################################
 			{
-				back[i][j] = back[i][j] * 100; // keep track of path thru table
+				back[i - 1][j - 1] = back[i - 1][j - 1] * 100; // keep track of path thru table
 			}//####################################################
 
-			i++;
-			j++;
+			i--;
 		}
-
-		else if (back[i][j] == L) // left
+		else if (back[i - 1][j - 1] == L) // left
 		{
 			//str1_new = str1[i - 1] + str1_new;
 			//str2_new = "-" + str2_new;
 
-			str1_new = str1_new + str1[i + 1];
-			str2_new = str2_new + "-";
+			path.push_front(back[i - 1][j - 1]);
 
 			if (DEBUG) //##########################################
 			{
-				back[i][j] = back[i][j] * 100; // keep track of path thru table
+				back[i - 1][j - 1] = back[i - 1][j - 1] * 100; // keep track of path thru table
 			}//####################################################
 
-			j++;
+			j--;
 		}
 	}
 
 	if (j > 1)
 	{
-		str1_new = str1.substr(0, j) + str1_new;
-
-		for (int k = 0; k < j; k++)
+		while (j > 1)
 		{
-			str2_new = "-" + str2_new;
-		}
+			//str1_new = str1.substr[0, j] + str1_new;
+			/*string str_to_add = "";
+			for (int k = 0; k < j; k++)
+			{
+				str_to_add += "-";
+			}
+			str2_new = str_to_add + str2_new;
+			*/
 
-		//str2_new = str2_new + str2_new;
+			path.push_front(back[i - 1][j - 1]);
+			j--;
+		}
 	}
-	
+
 	if (i > 1)
 	{
-		for (int k = 0; k < i; k++)
+		while (i > 1)
 		{
-			str1_new = "-" + str1_new;
+			//str2_new = str2.substr[0, i] + str2_new;
+			/*string str_to_add = "";
+			for (int k = 0; k < i; k++)
+			{
+				str_to_add += "-";
+			}
+			str1_new = str_to_add + str1_new;
+			*/
+
+			path.push_front(back[i - 1][j - 1]);
+			i--;
 		}
+	}
 
-		//str1_new = str1_new + str1_new;
-
-		str2_new = str2.substr(0, i) + str2_new;
+	i = 1;
+	j = 1;
+	str1_new.clear();
+	str2_new.clear();
+	for (int k = 0; k < path.size(); k++) // <-------- Crashing here. I think path.size() is either too small or too large sometimes.
+	{
+		if (path[k] == L)
+		{
+			str1_new += '-';
+			str2_new += str1[j];
+			j++;
+		}
+		else if (path[k] == D)
+		{
+			str2_new += '-';
+			str1_new += str1[i];
+			i++;
+		}
+		else if (path[k] == DIAG)
+		{
+			str1_new += str1[i];
+			str2_new += str2[j];
+			i++;
+			j++;
+		}
 	}
 	
 	if (DEBUG)//#####################################################################################
@@ -217,8 +263,15 @@ void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, 
 			
 		}
 		outfile << "Actual cost: " << act_cost << endl;
-
 		outfile << str1_new << "," << endl << str2_new << ":" << cost << endl << endl;
+
+		outfile << "Optimum Path:" << endl;
+		for (int k = 0; k < path.size(); k++)
+		{
+			outfile << path[k] << ",";
+		}
+		outfile << endl;
+		outfile << "Path length: " << path.size() << endl << endl;
 
 		outfile << "Expected Output:" << endl;
 		outfile << "C--GCAATTCTGAAGCGCTGGGGAAGAC--GGG-T,\nTATCCCATCGA-ACGC-CT----AT-TCTAGG-AT:24" << endl << endl;
@@ -451,8 +504,8 @@ int main()
 	}
 	else
 	{
-		string str1 = "ACAGCAGTCTGCATCCTAAGTCGGCCTCAGATAGAGGGTCACTCTAGGCAGCAAGTATTGACTCCCGGTCGCGGCTTATTACCGAATG";
-		string str2 = "GTTGGAGACATCTCTCAAGATGTAGGATAGGCGATGGTATCCACTTACGAGTCGCTTGAAGTTCACAGAATAG";
+		string str1 = "CGCAATTCTGAAGCGCTGGGGAAGACGGGT";
+		string str2 = "TATCCCATCGAACGCCTATTCTAGGAT";
 
 		int cost = 0;
 
