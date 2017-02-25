@@ -10,7 +10,7 @@
 
 #define ALL_INPUTS 1 //run complete input file
 #define RAND_INPUT_FILE 0 //create random seq size input file
-#define DEBUG 0 //turn this on for printed debug statements
+#define DEBUG 1 //turn this on for printed debug statements
 #define TABLE_FILE 0 //print out cost and backtrace tables per sequence
 #define TIME_FILES 0 //copy algorithm run times to file
 
@@ -315,14 +315,8 @@ void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, 
 		outfile << endl;
 		// END BACKTRACE --------------------------
 
-
 		outfile.close();
 
-		//ofstream outfile;
-		outfile.open("example.txt");
-		outfile << str1_new << "," << str2_new << ":" << cost << endl;
-		outfile.close();
-		
 		cout << str1_new << "," << endl;
 		cout << str2_new << ":" << cost << endl;
 	}//###################################################################################################
