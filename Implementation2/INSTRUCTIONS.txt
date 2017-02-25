@@ -1,0 +1,5 @@
+1. Have Visual Studio 2015 Community
+2. Place imp2cost.txt and imp2input.txt in directory Implementation2. genomeAlign.cpp will be in this directory.
+3. Go up a directory and open Implementation2.sln
+3. Go to Debug > Start Without Debugging
+4. Run checker.py for correctness

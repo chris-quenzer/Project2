@@ -10,7 +10,7 @@
 
 #define ALL_INPUTS 1 //run complete input file
 #define RAND_INPUT_FILE 0 //create random seq size input file
-#define DEBUG 1 //turn this on for printed debug statements
+#define DEBUG 0 //turn this on for printed debug statements
 #define TABLE_FILE 0 //print out cost and backtrace tables per sequence
 #define TIME_FILES 0 //copy algorithm run times to file
 
@@ -33,7 +33,7 @@ enum back_trace
 using namespace std;
 
 int edit_dist(string &str1, string &str2, int m, int n, char **cost_arr_in);
-void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, vector<vector<int>> back, int cost, char **cost_arr_in);
+void align(string &str1, string &str2, int m, int n, vector<vector<int> > table, vector<vector<int> > back, int cost, char **cost_arr_in);
 int det_cost(char comp1, char comp2, char **cost_arr_in);
 void create_cost_arr(char **&cost_arr_in);
 int get_min_cost(int x, int y, int z);
@@ -45,8 +45,8 @@ int Rand_i(int ilow, int ihigh);
 int edit_dist(string &str1, string &str2, int m, int n, char **cost_arr_in)
 {
 	int output = -1;
-	vector<vector<int>> table;
-	vector<vector<int>> back;
+	vector<vector<int> > table;
+	vector<vector<int> > back;
 	int str_diff = m - n;
 
 	// Create table to hold subproblems
@@ -122,7 +122,7 @@ int edit_dist(string &str1, string &str2, int m, int n, char **cost_arr_in)
 	return output;
 }
 
-void align(string &str1, string &str2, int m, int n, vector<vector<int>> table, vector<vector<int>> back, int cost, char **cost_arr_in)
+void align(string &str1, string &str2, int m, int n, vector<vector<int> > table, vector<vector<int> > back, int cost, char **cost_arr_in)
 {
 	string str1_new = "", str2_new = "";
 	int i, j;
